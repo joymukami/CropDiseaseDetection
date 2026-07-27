@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crop Disease Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="page">
+        <header>
+            <h1>Crop Disease Detector</h1>
+            <p class="subtitle">Upload a photo of a crop or leaf to check if it's healthy or unhealthy.</p>
+        </header>
+
+        <div class="content">
+            <div class="panel upload-panel">
+                <form method="POST" enctype="multipart/form-data">
+                    <label class="file-label">
+                        <input type="file" name="image" id="imageInput" accept="image/*" required>
+                        <span> Choose an image</span>
+                    </label>
+                    <button type="submit">Predict</button>
+                </form>
+
+                <div class="preview" id="previewBox" {% if not image_url %}style="display: none;"{% endif %}>
+                    <img id="previewImg" src="{{ image_url if image_url else '' }}" alt="Selected image">
+                </div>
+
+                <div class="preview placeholder" id="placeholderBox" {% if image_url %}style="display: none;"{% endif %}>
+                    <span>No image uploaded yet</span>
+                </div>
+            </div>
+
+            <div class="panel result-panel">
+                {% if error %}
+                    <div class="result-box error">
+                        <span class="icon">⚠️</span>
+                        <h2>Not a Recognized Crop Image</h2>
+                        <p>{{ error }}</p>
+                    </div>
+                {% elif result %}
+                    <div class="result-box {{ 'healthy' if result.label == 'HEALTHY' else 'unhealthy' }}">
+                        <span class="icon">{{ '✅' if result.label == 'HEALTHY' else '🚫' }}</span>
+                        <h2>{{ result.label }}</h2>
+                        <p class="confidence-label">Confidence: {{ result.confidence }}</p>
+                        <div class="confidence-bar-track">
+                            <div class="confidence-bar-fill {{ 'healthy' if result.label == 'HEALTHY' else 'unhealthy' }}" data-confidence="{{ result.confidence }}"></div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="result-box placeholder">
+                        <h2>Awaiting prediction</h2>
+                        <p>Upload an image and click Predict to see results here.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Instantly preview the chosen image before form submission
+        const imageInput = document.getElementById('imageInput');
+        const previewBox = document.getElementById('previewBox');
+        const previewImg = document.getElementById('previewImg');
+        const placeholderBox = document.getElementById('placeholderBox');
+
+        imageInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImg.src = e.target.result;
+                    previewBox.style.display = 'flex';
+                    placeholderBox.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Set confidence bar widths (from earlier)
+        document.querySelectorAll('.confidence-bar-fill').forEach(el => {
+            el.style.width = el.dataset.confidence;
+        });
+    </script>
+</body>
+</html>
